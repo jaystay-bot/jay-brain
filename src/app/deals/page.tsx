@@ -6,7 +6,7 @@ import { useUser } from "@clerk/nextjs";
 import ZipInput from "@/components/ZipInput";
 import DealTable from "@/components/DealTable";
 import ProBadge from "@/components/ProBadge";
-import { Deal, ScanResult } from "@/lib/scrapers/types";
+import { ScanResult } from "@/lib/scrapers/types";
 
 export default function DealsPage() {
   const searchParams = useSearchParams();
@@ -17,9 +17,7 @@ export default function DealsPage() {
   const [result, setResult] = useState<ScanResult | null>(null);
   const [error, setError] = useState("");
   const [isPro, setIsPro] = useState(false);
-  const [scansRemaining, setScansRemaining] = useState<number | undefined>(
-    undefined
-  );
+  const [scansRemaining, setScansRemaining] = useState<number | undefined>(undefined);
 
   useEffect(() => {
     if (initialZip) {
@@ -54,6 +52,7 @@ export default function DealsPage() {
       }
 
       setResult(data);
+      if (data.isPro) setIsPro(true);
     } catch {
       setError("Network error. Please try again.");
     } finally {

@@ -1,6 +1,6 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
-import { Store, Deal } from "./types";
+import { Store, Deal, parsePrice } from "./types";
 
 const STORE_LOCATOR_URL =
   "https://www.lowes.com/store/api/search";
@@ -36,10 +36,12 @@ export async function findLowesStores(
     const storeList = res.data?.storeListResponse?.stores || res.data?.stores || [];
 
     for (const s of storeList) {
+      const storeId = s.storeNumber || s.id || s.storeId;
+      if (!storeId) continue; // skip entries with no ID
       stores.push({
         retailer: "lowes",
-        storeNumber: String(s.storeNumber || s.id || s.storeId),
-        name: s.name || `Lowes #${s.storeNumber}`,
+        storeNumber: String(storeId),
+        name: s.name || `Lowes #${storeId}`,
         address: s.address || s.streetAddress || "",
         city: s.city || "",
         state: s.state || "",
@@ -129,9 +131,7 @@ export async function scrapeLowesClearance(
           originalPrice,
           salePrice,
           discountPct,
-          productUrl: productUrl.startsWith("http")
-            ? productUrl
-            : `https://www.lowes.com${productUrl}`,
+          productUrl: sanitizeProductUrl(productUrl, "https://www.lowes.com"),
           scannedAt: new Date().toISOString(),
         });
       }
@@ -146,8 +146,15 @@ export async function scrapeLowesClearance(
   return deals;
 }
 
-function parsePrice(text: string): number {
-  const match = text.replace(/[^0-9.]/g, "");
-  const price = parseFloat(match);
-  return isNaN(price) ? 0 : price;
+function sanitizeProductUrl(url: string, baseUrl: string): string {
+  if (!url) return "";
+  const full = url.startsWith("http") ? url : `${baseUrl}${url}`;
+  try {
+    const parsed = new URL(full);
+    if (!parsed.hostname.endsWith("lowes.com")) return "";
+    return parsed.toString();
+  } catch {
+    return "";
+  }
 }
+

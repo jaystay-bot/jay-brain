@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { auth } from "@clerk/nextjs/server";
+import { auth, currentUser } from "@clerk/nextjs/server";
 import { geocodeZip, isValidZip, haversineDistance } from "@/lib/geo";
 import {
   findHomeDepotStores,
@@ -9,7 +9,7 @@ import { findLowesStores, scrapeLowesClearance } from "@/lib/scrapers/lowes";
 import {
   getCachedDeals,
   cacheDeals,
-  recordScan,
+  recordScanAndGetCount,
   getScanCount,
 } from "@/lib/cache";
 import { isProSubscriber } from "@/lib/stripe";
@@ -17,6 +17,7 @@ import { Deal, ScanResult } from "@/lib/scrapers/types";
 
 const FREE_DAILY_LIMIT = 3;
 const DEFAULT_RADIUS = 50;
+const MAX_DEALS_PER_RESPONSE = 500;
 
 export async function POST(req: NextRequest) {
   try {
@@ -35,10 +36,16 @@ export async function POST(req: NextRequest) {
       );
     }
 
-    const radiusMiles = Math.min(body.radius || DEFAULT_RADIUS, DEFAULT_RADIUS);
+    // Clamp radius between 1 and 50 (fix: previously always returned 50)
+    const radiusMiles = Math.max(1, Math.min(Number(body.radius) || DEFAULT_RADIUS, DEFAULT_RADIUS));
 
-    // Check rate limit for free users
-    const isPro = await isProSubscriber(body.email || "");
+    // Use Clerk's authenticated email — never trust client-supplied email
+    const user = await currentUser();
+    const email = user?.emailAddresses?.[0]?.emailAddress || "";
+
+    const isPro = email ? await isProSubscriber(email) : false;
+
+    // Check rate limit for free users before scanning
     if (!isPro) {
       const scanCount = await getScanCount(userId);
       if (scanCount >= FREE_DAILY_LIMIT) {
@@ -67,17 +74,31 @@ export async function POST(req: NextRequest) {
 
     // Find stores from both retailers in parallel
     const [hdStores, lowesStores] = await Promise.all([
-      findHomeDepotStores(lat, lng, radiusMiles).catch((e) => {
-        errors.push(`Home Depot store lookup failed: ${e.message}`);
+      findHomeDepotStores(lat, lng, radiusMiles).catch((e: unknown) => {
+        const msg = e instanceof Error ? e.message : "Unknown error";
+        errors.push(`Home Depot store lookup failed: ${msg}`);
         return [];
       }),
-      findLowesStores(lat, lng, radiusMiles).catch((e) => {
-        errors.push(`Lowes store lookup failed: ${e.message}`);
+      findLowesStores(lat, lng, radiusMiles).catch((e: unknown) => {
+        const msg = e instanceof Error ? e.message : "Unknown error";
+        errors.push(`Lowes store lookup failed: ${msg}`);
         return [];
       }),
     ]);
 
     const allStores = [...hdStores, ...lowesStores];
+
+    if (allStores.length === 0 && errors.length === 0) {
+      // No stores found but no errors — tell user explicitly
+      return NextResponse.json({
+        deals: [],
+        errors: [],
+        scannedAt: new Date().toISOString(),
+        zip,
+        radiusMiles,
+        storesScanned: 0,
+      } satisfies ScanResult);
+    }
 
     // Scrape clearance for each store (check cache first)
     for (const store of allStores) {
@@ -97,10 +118,10 @@ export async function POST(req: NextRequest) {
           await cacheDeals(deals);
         }
         allDeals.push(...deals);
-      } catch (e) {
-        const err = e as Error;
+      } catch (e: unknown) {
+        const msg = e instanceof Error ? e.message : "Unknown error";
         errors.push(
-          `Failed to scrape ${store.retailer} store ${store.storeNumber}: ${err.message}`
+          `Failed to scrape store ${store.storeNumber}: ${msg}`
         );
       }
     }
@@ -119,11 +140,12 @@ export async function POST(req: NextRequest) {
       };
     });
 
-    // Sort by discount % descending
+    // Sort by discount % descending, cap results to prevent memory bloat
     allDeals.sort((a, b) => b.discountPct - a.discountPct);
+    allDeals = allDeals.slice(0, MAX_DEALS_PER_RESPONSE);
 
-    // Record scan
-    await recordScan(userId, zip, radiusMiles);
+    // Record scan atomically
+    await recordScanAndGetCount(userId, zip, radiusMiles);
 
     const result: ScanResult = {
       deals: allDeals,
@@ -132,10 +154,11 @@ export async function POST(req: NextRequest) {
       zip,
       radiusMiles,
       storesScanned: allStores.length,
+      isPro,
     };
 
     return NextResponse.json(result);
-  } catch (error) {
+  } catch (error: unknown) {
     console.error("Scan error:", error);
     return NextResponse.json(
       { error: "Internal server error" },

@@ -116,22 +116,41 @@ export async function cacheStores(stores: Store[]): Promise<void> {
   });
 }
 
-export async function recordScan(
+/**
+ * Atomically record a scan and return the updated daily count.
+ * This prevents the race condition where two concurrent requests
+ * both read count=2 and both proceed past the limit.
+ */
+export async function recordScanAndGetCount(
   userId: string,
   zip: string,
   radiusMiles: number
-): Promise<void> {
+): Promise<number> {
+  const now = new Date().toISOString();
+  const todayStart = new Date();
+  todayStart.setUTCHours(0, 0, 0, 0);
+
+  // Insert the scan first
   await supabase.from("scans").insert({
     user_id: userId,
     zip_code: zip,
     radius_miles: radiusMiles,
-    created_at: new Date().toISOString(),
+    created_at: now,
   });
+
+  // Then count (includes the one we just inserted)
+  const { count } = await supabase
+    .from("scans")
+    .select("*", { count: "exact", head: true })
+    .eq("user_id", userId)
+    .gte("created_at", todayStart.toISOString());
+
+  return count || 0;
 }
 
 export async function getScanCount(userId: string): Promise<number> {
   const todayStart = new Date();
-  todayStart.setHours(0, 0, 0, 0);
+  todayStart.setUTCHours(0, 0, 0, 0);
 
   const { count } = await supabase
     .from("scans")

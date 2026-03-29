@@ -1,6 +1,6 @@
 import axios from "axios";
 import * as cheerio from "cheerio";
-import { Store, Deal } from "./types";
+import { Store, Deal, parsePrice } from "./types";
 
 const STORE_LOCATOR_URL =
   "https://www.homedepot.com/l/search";
@@ -38,10 +38,12 @@ export async function findHomeDepotStores(
     const storeList = data?.stores || data?.storeDirectory?.stores || [];
 
     for (const s of storeList) {
+      const storeId = s.storeId || s.storeNumber || s.id;
+      if (!storeId) continue; // skip entries with no ID
       stores.push({
         retailer: "home_depot",
-        storeNumber: String(s.storeId || s.storeNumber || s.id),
-        name: s.storeName || s.name || `Home Depot #${s.storeId}`,
+        storeNumber: String(storeId),
+        name: s.storeName || s.name || `Home Depot #${storeId}`,
         address: s.address?.street || s.streetAddress || "",
         city: s.address?.city || s.city || "",
         state: s.address?.state || s.state || "",
@@ -130,9 +132,7 @@ export async function scrapeHomeDepotClearance(
             originalPrice,
             salePrice,
             discountPct,
-            productUrl: productUrl.startsWith("http")
-              ? productUrl
-              : `https://www.homedepot.com${productUrl}`,
+            productUrl: sanitizeProductUrl(productUrl, "https://www.homedepot.com"),
             scannedAt: new Date().toISOString(),
           });
         }
@@ -148,8 +148,16 @@ export async function scrapeHomeDepotClearance(
   return deals;
 }
 
-function parsePrice(text: string): number {
-  const match = text.replace(/[^0-9.]/g, "");
-  const price = parseFloat(match);
-  return isNaN(price) ? 0 : price;
+function sanitizeProductUrl(url: string, baseUrl: string): string {
+  if (!url) return "";
+  const full = url.startsWith("http") ? url : `${baseUrl}${url}`;
+  try {
+    const parsed = new URL(full);
+    // Only allow URLs from expected retailer domain
+    if (!parsed.hostname.endsWith("homedepot.com")) return "";
+    return parsed.toString();
+  } catch {
+    return "";
+  }
 }
+

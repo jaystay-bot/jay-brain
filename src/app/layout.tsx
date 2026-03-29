@@ -1,3 +1,4 @@
+import "@/lib/env"; // validate env vars at startup
 import type { Metadata } from "next";
 import { Geist, Geist_Mono } from "next/font/google";
 import { ClerkProvider, SignInButton, UserButton } from "@clerk/nextjs";

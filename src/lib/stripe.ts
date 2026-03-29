@@ -19,7 +19,7 @@ export async function createCheckoutSession(
     cancel_url: `${process.env.NEXT_PUBLIC_APP_URL}/deals`,
     metadata: { userId },
   });
-  return session.url!;
+  return session.url || "";
 }
 
 export async function isProSubscriber(
