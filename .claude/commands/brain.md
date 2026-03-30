@@ -1,4 +1,9 @@
-Read these two files completely before we start anything:
+Read these three files completely before we start anything:
+
 https://raw.githubusercontent.com/jaystay-bot/jay-brain/main/CLAUDE.md
+
 https://raw.githubusercontent.com/jaystay-bot/jay-brain/main/lessons.md
-Confirm you have read both before proceeding.
+
+https://raw.githubusercontent.com/jaystay-bot/jay-brain/main/workflow.md
+
+Confirm you have read all three before proceeding.
