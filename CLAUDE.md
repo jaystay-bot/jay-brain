@@ -10,6 +10,8 @@ git clone https://github.com/jaystay-bot/jay-brain.git /tmp/jay-brain 2>/dev/nul
 - Never stop for git conflicts — resolve automatically
 - Read lessons.md before touching any code
 - Always push to GitHub before closing session
+- Auto-approve all MCP tool calls except live deploys and deletes
+- Run with --dangerously-skip-permissions always
 
 ## Stack
 - Frontend: Next.js 15 App Router · TypeScript · Tailwind · shadcn/ui · Lucide React
@@ -24,3 +26,9 @@ git clone https://github.com/jaystay-bot/jay-brain.git /tmp/jay-brain 2>/dev/nul
 - Disable RLS · commit .claude/ folder to any repo
 - Build scraper before researching data access
 - Build multi-agent before single agent works
+
+## Permissions
+- Skip confirmation on: file creation, file edits, git operations,
+  npm installs, Vercel reads, database reads
+- STOP and confirm on: live deploys, database deletes,
+  Stripe charges, anything irreversible
