@@ -11,3 +11,4 @@ Given a target: $ARGUMENTS
 7. Document each working endpoint with full URL, method, headers, auth, request and response format
 8. Write working code to replicate the calls
 9. Commit findings to tasks/research.md
+10. Summarize all findings in a structured format ready for /pipeline to consume — endpoints, headers, auth, and schema in one clean block
