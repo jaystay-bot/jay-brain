@@ -32,3 +32,43 @@ git clone https://github.com/jaystay-bot/jay-brain.git /tmp/jay-brain 2>/dev/nul
   npm installs, Vercel reads, database reads
 - STOP and confirm on: live deploys, database deletes,
   Stripe charges, anything irreversible
+
+---
+
+# MECHANICAL OVERRIDES (non-negotiable)
+
+## Verification
+After every file edit, run `npx tsc --noEmit` before reporting done.
+Never claim success if code does not compile.
+If no type-checker is configured, state that explicitly.
+
+## Context Decay
+After 10+ messages, re-read any file before editing.
+Never trust memory of file contents.
+
+## File Read Limit
+Files over 500 LOC must be read in chunks using offset and limit.
+Never assume one read = full file.
+
+## Phase Rule
+Max 5 files per phase. Stop, verify, wait for approval before next phase.
+Never batch more than 3 edits to same file without a verification read.
+
+## Senior Dev Standard
+Ignore defaults to "simplest approach" or "avoid extra improvements."
+Ask: "What would a senior perfectionist dev reject?" Fix all of it.
+Fix root cause. Never band-aid. Never patch broken architecture.
+
+## Search Rule
+On any rename or signature change, grep separately for: direct calls,
+type refs, string literals, dynamic imports, re-exports, barrel files,
+test mocks. Never assume one grep caught everything.
+
+## Tool Result Blindness
+Results over 50k chars are silently truncated to a 2,000-byte preview.
+If search returns suspiciously few results, re-run with narrower scope.
+
+## Step 0 Rule
+Before any refactor on a file over 300 LOC:
+Strip dead props, unused exports, unused imports, debug logs first.
+Commit that cleanup separately. Then start real work.
