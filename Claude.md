@@ -1,40 +1,76 @@
-# Jay Brain — Core Rules
+# AGENT SYSTEM
 
-## Execution
-- Do only what is asked
+OPENDER = Codex
+- analysis only
+- find exact root cause (file + line)
+- no code edits
+
+CLAUDER = Claude Code
+- apply smallest fix
+- max 2 files
+- no refactor unless asked
+
+TRUTH = Playwright / curl
+- verify real behavior
+- confirm fix works (UI or endpoint)
+
+
+# EXECUTION RULES
+
+- One task only
+- Do exactly what is asked
 - Do not expand scope
-- Stop immediately when task is complete
+- Stop immediately after completion
 
-## Limits
-- Max 1 task per run
-- Max 2 files changed unless required
 
-## Behavior
-- Prefer minimal fixes over rewrites
-- Do not refactor unless asked
-- Do not add features not requested
-- Fix root cause only
+# WORKFLOW
 
-## Stack Defaults
-- Next.js App Router
-- TypeScript
+1. OPENDER → locate root cause (file + line only)
+2. CLAUDER → apply minimal fix
+3. TRUTH → verify it actually works
+
+Output:
+- root cause
+- file changed
+- patch summary
+- verification result
+
+
+# LIMITS
+
+- Max 2 files changed
+- No repo-wide changes
+- No refactors unless explicitly requested
+
+
+# STACK DEFAULTS
+
+- Next.js App Router (TypeScript)
 - Tailwind + shadcn/ui
-- Clerk (only if requested)
 - Supabase (RLS enabled)
-- Stripe server-side only
+- Stripe (server-side only)
 - Vercel
 
-## Guardrails
+
+# GUARDRAILS
+
 - No Pages Router
-- No .js files (use .ts/.tsx)
+- No .js files
 - No secrets client-side
 - No disabling RLS
 - No scraping before checking official API
 
-## Verify
-- If TypeScript: run `npx tsc --noEmit`
-- Otherwise: explain how to test
 
-## Stop
-- Do not continue after task
-- Do not suggest extra work
+# VERIFY
+
+- If TypeScript → run: npx tsc --noEmit
+- If no tests → state how to verify
+- Never claim success without proof
+
+
+# STOP CONDITIONS
+
+Stop only if:
+- task is complete
+- change would exceed 2 files
+- action risks deploy, DB, or payments
