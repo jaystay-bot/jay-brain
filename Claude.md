@@ -74,3 +74,16 @@ Stop only if:
 - task is complete
 - change would exceed 2 files
 - action risks deploy, DB, or payments
+- # HARD STOP RULE (CRITICAL)
+
+After completing the task:
+
+- Do NOT continue thinking
+- Do NOT explore other files
+- Do NOT suggest improvements
+- Do NOT run additional commands
+- Do NOT expand scope
+
+Immediately return the result and STOP.
+
+If the task is complete, exit.
