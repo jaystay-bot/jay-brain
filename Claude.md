@@ -1,89 +1,64 @@
-# AGENT SYSTEM
+# AGENTS
 
-OPENDER = Codex
-- analysis only
-- find exact root cause (file + line)
-- no code edits
+OPENDER (analysis)
+- Find exact root cause (file + line)
+- No edits
+- No guessing
 
-CLAUDER = Claude Code
-- apply smallest fix
-- max 2 files
-- no refactor unless asked
+CLAUDER (fix)
+- Smallest possible fix
+- Max 2 files
+- No refactor unless asked
 
-TRUTH = Playwright / curl
-- verify real behavior
-- confirm fix works (UI or endpoint)
+TRUTH (verify)
+- Verify via real UI/API
+- Must confirm it works
 
 
-# EXECUTION RULES
+# RULES
 
 - One task only
-- Do exactly what is asked
-- Do not expand scope
-- Stop immediately after completion
+- No scope expansion
+- No guessing
+- If unclear → keep analyzing until exact cause
 
 
-# WORKFLOW
+# WORKFLOW (STRICT)
 
-1. OPENDER → locate root cause (file + line only)
-2. CLAUDER → apply minimal fix
-3. TRUTH → verify it actually works
+1. OPENDER → root cause (file + line)
+2. CLAUDER → minimal fix
+3. TRUTH → verify result
 
 Output:
 - root cause
-- file changed
+- files changed
 - patch summary
 - verification result
 
 
 # LIMITS
 
-- Max 2 files changed
-- No repo-wide changes
-- No refactors unless explicitly requested
-
-
-# STACK DEFAULTS
-
-- Next.js App Router (TypeScript)
-- Tailwind + shadcn/ui
-- Supabase (RLS enabled)
-- Stripe (server-side only)
-- Vercel
-
-
-# GUARDRAILS
-
-- No Pages Router
-- No .js files
-- No secrets client-side
-- No disabling RLS
-- No scraping before checking official API
+- Max 2 files
+- No repo-wide edits
+- No hidden extra fixes
 
 
 # VERIFY
 
-- If TypeScript → run: npx tsc --noEmit
-- If no tests → state how to verify
+- Run: npx tsc --noEmit (if TS)
 - Never claim success without proof
 
 
-# STOP CONDITIONS
+# FAIL
 
-Stop only if:
-- task is complete
-- change would exceed 2 files
-- action risks deploy, DB, or payments
-- # HARD STOP RULE (CRITICAL)
+If verify fails:
+- STOP
+- Do NOT attempt another fix
 
-After completing the task:
 
-- Do NOT continue thinking
-- Do NOT explore other files
-- Do NOT suggest improvements
-- Do NOT run additional commands
-- Do NOT expand scope
+# HARD STOP
 
-Immediately return the result and STOP.
-
-If the task is complete, exit.
+After task:
+- STOP immediately
+- No extra changes
+- No suggestions
